@@ -1,6 +1,7 @@
 package com.quarkus.vertx;
 
 import com.quarkus.vertx.config.SocketConfig;
+import com.quarkus.vertx.exceptions.ParsingException;
 import com.quarkus.vertx.service.MessageService;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;
@@ -53,6 +54,7 @@ public class TCPResource extends AbstractVerticle {
         //@formatter:off
         this.messageService.handleMessage(buffer.getBytes())
                 .onFailure().retry().atMost(socketConfig.retry().maxAttempts())
+                .onFailure().transform(fail -> new ParsingException(fail.getMessage()))
                 .onItem()
                     .invoke(r -> Log.info("Elaborated response: " + r + " for " + socketAddress))
                 .onItem()
@@ -63,7 +65,7 @@ public class TCPResource extends AbstractVerticle {
                     .invoke(v -> Log.debug("Connection closed with " + socketAddress))
                 .subscribe().with(
                         v -> Log.info("Response sent to " + socketAddress),
-                        fail -> Log.error("Failed to reply " + socketAddress + ": " + fail.getMessage())
+                        Throwable::printStackTrace
                 );
         //@formatter:on
     }

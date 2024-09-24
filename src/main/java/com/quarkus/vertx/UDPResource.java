@@ -1,6 +1,7 @@
 package com.quarkus.vertx;
 
 import com.quarkus.vertx.config.SocketConfig;
+import com.quarkus.vertx.exceptions.ParsingException;
 import com.quarkus.vertx.service.MessageService;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;
@@ -27,10 +28,11 @@ public class UDPResource extends AbstractVerticle {
         this.messageService = messageService;
         this.datagramSocket = vertx.createDatagramSocket();
         this.datagramSocket.handler(this::packetHandler);
-        this.datagramSocket.listen(socketConfig.udp().port(), socketConfig.udp().host()).subscribe().with(
-                x -> Log.info("UDP server is now listening on port " + socketConfig.udp().port()),
-                fail -> Log.error("Failed to bind UDP server: " + fail.getMessage())
-        );
+        this.datagramSocket.listen(socketConfig.udp().port(), socketConfig.udp().host())
+                .subscribe().with(
+                        x -> Log.info("UDP server is now listening on port " + socketConfig.udp().port()),
+                        fail -> Log.error("Failed to bind UDP server: " + fail.getMessage())
+                );
         this.socketConfig = socketConfig;
     }
 
@@ -40,6 +42,7 @@ public class UDPResource extends AbstractVerticle {
         //@formatter:off
         this.messageService.handleMessage(packet.data().getBytes())
                 .onFailure().retry().atMost(socketConfig.retry().maxAttempts())
+                .onFailure().transform(fail -> new ParsingException(fail.getMessage()))
                 .onItem()
                     .invoke(r -> Log.info("Elaborated response: " + r + " for " + sender))
                 .onItem()
@@ -47,7 +50,7 @@ public class UDPResource extends AbstractVerticle {
                     .invoke(v -> Log.debug("Response sent to " + sender))
                 .subscribe().with(
                         v -> Log.info("Message sent to " + sender),
-                        fail -> Log.error("Failed to send message to " + sender + ": " + fail.getMessage())
+                        Throwable::printStackTrace
                 );
         //@formatter:on
     }
@@ -60,15 +63,11 @@ public class UDPResource extends AbstractVerticle {
     }
 
     public void onShutdown(@Observes ShutdownEvent ev) {
-        this.datagramSocket.close().subscribe().with(
-                x -> Log.info("Datagram socket closed"),
-                fail -> Log.error("Failed to close datagram socket: " + fail.getMessage())
-        );
-
-        this.vertx.close().subscribe().with(
-                x -> Log.info("Vertx closed"),
-                fail -> Log.error("Failed to close Vertx: " + fail.getMessage())
-        );
+        this.datagramSocket.close()
+                .onItem().transformToUni(x -> this.vertx.close())
+                .subscribe().with(
+                        x -> Log.info("UDP server closed"),
+                        fail -> Log.error("Failed to close UDP server: " + fail.getMessage())
+                );
     }
-
 }
