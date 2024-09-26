@@ -20,3 +20,5 @@ quarkus:
   hibernate-orm:
     database:
       generation: drop-and-create
+  redis:
+    hosts: redis://localhost:6379
