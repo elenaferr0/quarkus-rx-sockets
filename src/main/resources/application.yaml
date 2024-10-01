@@ -13,12 +13,15 @@ quarkus:
     level: INFO
   datasource:
     db-kind: postgresql
-    username: quarkus_test
-    password: quarkus_test
+    username: elena.ferro
+    password: Apyb2nkw
     reactive:
-      url: vertx-reactive:postgresql://localhost:5432/quarkus_test
+      url: vertx-reactive:postgresql://localhost:7001/vbx_comm
   hibernate-orm:
     database:
-      generation: drop-and-create
+      generation: none
+    scripts:
+      generation: none
+
   redis:
     hosts: redis://localhost:6379

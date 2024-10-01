@@ -2,8 +2,8 @@ package com.quarkus.vertx.service;
 
 import io.quarkus.logging.Log;
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
-import io.quarkus.redis.runtime.datasource.ReactiveRedisDataSourceImpl;
 import io.quarkus.runtime.StartupEvent;
+import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.vertx.core.AbstractVerticle;
 import io.vertx.mutiny.core.Vertx;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,13 +23,15 @@ public class RedisService extends AbstractVerticle {
         this.vertx = vertx;
     }
 
-    public void hash() {
-        this.reactiveRedisDataSource.hash(String.class, String.class, String.class).hset("key", Map.of("field", "value"))
-                .subscribe().with(
-                        x -> Log.info("Key set: " + x),
-                        fail -> Log.error("Failed to set key: " + fail.getMessage())
-                );
+    public Uni<Long> hash(String key, String value) {
+        Log.info(Thread.currentThread());
 
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+            Log.error("Thread interrupted: " + e.getMessage());
+        }
+        return this.reactiveRedisDataSource.hash(String.class).hset(key, Map.of(key, value));
     }
 
     public void onStart(@Observes StartupEvent ev) {
