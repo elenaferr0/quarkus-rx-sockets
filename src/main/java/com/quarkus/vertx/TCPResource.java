@@ -52,9 +52,9 @@ public class TCPResource extends AbstractVerticle {
         Log.debug("Received message from " + socketAddress);
 
         //@formatter:off
-        this.messageService.handleMessage(buffer.getBytes())
-                .onFailure().retry().atMost(socketConfig.retry().maxAttempts())
-                .onFailure().transform(fail -> new ParsingException(fail.getMessage()))
+        this.messageService.handleMessage(buffer.getBytes(), socketAddress)
+//                .onFailure().retry().atMost(socketConfig.retry().maxAttempts())
+//                .onFailure().transform(fail -> new ParsingException(fail.getMessage()))
                 .onItem()
                     .invoke(r -> Log.info("Elaborated response: " + r + " for " + socketAddress))
                 .onItem()

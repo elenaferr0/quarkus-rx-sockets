@@ -19,4 +19,10 @@ quarkus:
       url: vertx-reactive:postgresql://localhost:5432/quarkus_test
   hibernate-orm:
     database:
-      generation: drop-and-create
+      generation: none
+    scripts:
+      generation: none
+
+  redis:
+    hosts: redis://localhost:6379
+    max-pool-waiting: 1000
